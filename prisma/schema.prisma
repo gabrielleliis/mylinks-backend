@@ -1,9 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
+// Configurações do Prisma (Padrão)
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,6 +8,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Modelo do Usuário
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -25,14 +21,15 @@ model User {
   @@map("users")
 }
 
+// Modelo do Link
 model Link {
   id        String   @id @default(uuid())
   title     String
   url       String
-  userId    String
   createdAt DateTime @default(now())
 
-  // Relacionamento: O link pertence a um usuário
+  // Conexão com o Usuário (Chave Estrangeira)
+  userId    String
   user      User     @relation(fields: [userId], references: [id])
 
   @@map("links")

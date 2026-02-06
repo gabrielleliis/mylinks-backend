@@ -1,4 +1,5 @@
 import express, { Request, Response } from 'express';
+import { z } from 'zod';
 import { PrismaClient } from '@prisma/client';
 
 const app = express();
@@ -33,6 +34,38 @@ app.post('/users', async (req: Request, res: Response) => {
     res.status(500).json({ erro: 'Não foi possível criar o usuário' });
   }
 });
+
+// Rota para criar um Link novo
+app.post('/links', async (req, res) => {
+  // 1. Validamos os dados com o Zod (agora importado!)
+  const createLinkSchema = z.object({
+    title: z.string(),
+    url: z.string(),
+    userId: z.string().uuid(), // O ID do dono do link
+  })
+
+  const { title, url, userId } = createLinkSchema.parse(req.body)
+
+  // 2. Salvamos no banco
+  const newLink = await prisma.link.create({
+    data: {
+      title,
+      url,
+      userId,
+    }
+  })
+
+  // 3. Devolvemos a resposta (201 = Criado)
+  return res.status(201).json(newLink)
+})
+
+// Rota para LISTAR os links
+app.get('/links', async (req, res) => {
+  // O prisma vai no banco e busca TUDO que tem na tabela Link
+  const links = await prisma.link.findMany()
+
+  return res.json(links)
+})
 
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
