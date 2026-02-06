@@ -1,6 +1,9 @@
 import express, { Request, Response } from 'express';
+import { authMiddleware } from './middleware';
 import { z } from 'zod';
 import { PrismaClient } from '@prisma/client';
+import { hash, compare } from 'bcryptjs';
+import { sign } from 'jsonwebtoken';
 
 const app = express();
 const prisma = new PrismaClient(); // Conecta no banco
@@ -15,28 +18,69 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // Rota para CRIAR um Usuário (O poder do Prisma!)
-app.post('/users', async (req: Request, res: Response) => {
-  // Pegamos os dados que vieram na requisição
-  const { email, password } = req.body;
+app.post('/users', async (req, res) => {
+  const createUserSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(6), // Mínimo de 6 caracteres
+  })
+
+  const { email, password } = createUserSchema.parse(req.body)
+
+  // 1. Criptografando a senha antes de salvar
+  // O número 8 é o "custo" (quanto mais alto, mais seguro e mais lento)
+  const passwordHash = await hash(password, 8)
 
   try {
-    // O Prisma salva no banco magicamente
     const user = await prisma.user.create({
       data: {
         email,
-        password,
-      },
-    });
+        password: passwordHash, // AQUI: Salvamos a hash, não a senha pura!
+      }
+    })
 
-    // Devolvemos o usuário criado para quem chamou
-    res.status(201).json(user);
+    return res.status(201).json(user)
   } catch (error) {
-    res.status(500).json({ erro: 'Não foi possível criar o usuário' });
+    return res.status(500).json({ erro: 'Não foi possível criar o usuário (Email já existe?)' })
   }
-});
+})
+
+// Rota de LOGIN (Autenticação)
+app.post('/login', async (req, res) => {
+  const loginSchema = z.object({
+    email: z.string().email(),
+    password: z.string(),
+  })
+
+  const { email, password } = loginSchema.parse(req.body)
+
+  // 1. Buscar o usuário pelo e-mail
+  const user = await prisma.user.findUnique({
+    where: { email }
+  })
+
+  // Se não achar o usuário, erro
+  if (!user) {
+    return res.status(400).json({ message: 'E-mail ou senha inválidos.' })
+  }
+
+  // 2. Comparar a senha enviada com a senha criptografada do banco
+  const isPasswordValid = await compare(password, user.password)
+
+  // Se a senha não bater, erro
+  if (!isPasswordValid) {
+    return res.status(400).json({ message: 'E-mail ou senha inválidos.' })
+  }
+
+  // 3. Se tudo estiver certo, criar o Token
+  const token = sign({ userId: user.id }, 'segredo-do-jwt', {
+    expiresIn: '7d', // O token vale por 7 dias
+  })
+
+  return res.json({ token })
+})
 
 // Rota para criar um Link novo
-app.post('/links', async (req, res) => {
+app.post('/links', authMiddleware, async (req, res) => {
   // 1. Validamos os dados com o Zod (agora importado!)
   const createLinkSchema = z.object({
     title: z.string(),
@@ -68,7 +112,7 @@ app.get('/links', async (req, res) => {
 })
 
 // Rota para DELETAR um link
-app.delete('/links/:linkId', async (req, res) => {
+app.delete('/links/:linkId', authMiddleware,async (req, res) => {
   const { linkId } = req.params
 
   try {
