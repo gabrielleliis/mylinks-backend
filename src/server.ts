@@ -79,27 +79,26 @@ app.post('/login', async (req, res) => {
   return res.json({ token })
 })
 
-// Rota para criar um Link novo
+// Rota para criar um Link novo (AGORA AUTOMÁTICA)
 app.post('/links', authMiddleware, async (req, res) => {
-  // 1. Validamos os dados com o Zod (agora importado!)
+  
+  // 1. O Zod NÃO pede mais o userId (Removemos ele daqui)
   const createLinkSchema = z.object({
     title: z.string(),
     url: z.string(),
-    userId: z.string().uuid(), // O ID do dono do link
   })
 
-  const { title, url, userId } = createLinkSchema.parse(req.body)
+  const { title, url } = createLinkSchema.parse(req.body)
 
-  // 2. Salvamos no banco
+  // 2. Salvamos no banco usando o ID que o middleware pegou
   const newLink = await prisma.link.create({
     data: {
       title,
       url,
-      userId,
+      userId: req.userId, // <--- O ID vem daqui agora! (Seguro)
     }
   })
 
-  // 3. Devolvemos a resposta (201 = Criado)
   return res.status(201).json(newLink)
 })
 
@@ -111,21 +110,24 @@ app.get('/links', async (req, res) => {
   return res.json(links)
 })
 
-// Rota para DELETAR um link
-app.delete('/links/:linkId', authMiddleware,async (req, res) => {
+// Rota para DELETAR um link (Blindada 🛡️)
+app.delete('/links/:linkId', authMiddleware, async (req, res) => {
   const { linkId } = req.params
 
-  try {
-    await prisma.link.delete({
-      where: {
-        id: linkId,
-      },
-    })
+  // Usamos deleteMany para garantir que só apaga se o ID bater E o dono for o usuário logado
+  const result = await prisma.link.deleteMany({
+    where: {
+      id: linkId,
+      userId: req.userId, // <--- A Mágica: Só deleta se for SEU
+    },
+  })
 
-    return res.status(200).json({ message: "Link deletado com sucesso!" })
-  } catch (error) {
-    return res.status(500).json({ error: "Erro ao deletar (O ID pode não existir)" })
+  // O deleteMany retorna uma contagem. Se for 0, é porque não achou ou não é seu.
+  if (result.count === 0) {
+    return res.status(401).json({ message: "Link não encontrado ou você não tem permissão." })
   }
+
+  return res.status(200).json({ message: "Link deletado com sucesso!" })
 })
 
 app.listen(port, () => {
