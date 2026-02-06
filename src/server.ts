@@ -67,6 +67,23 @@ app.get('/links', async (req, res) => {
   return res.json(links)
 })
 
+// Rota para DELETAR um link
+app.delete('/links/:linkId', async (req, res) => {
+  const { linkId } = req.params
+
+  try {
+    await prisma.link.delete({
+      where: {
+        id: linkId,
+      },
+    })
+
+    return res.status(200).json({ message: "Link deletado com sucesso!" })
+  } catch (error) {
+    return res.status(500).json({ error: "Erro ao deletar (O ID pode não existir)" })
+  }
+})
+
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
 });
