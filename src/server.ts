@@ -1,133 +1,200 @@
+import cors from 'cors';
 import express, { Request, Response } from 'express';
 import { authMiddleware } from './middleware';
 import { z } from 'zod';
 import { PrismaClient } from '@prisma/client';
-import { hash, compare } from 'bcryptjs';
+import { hash, compare } from 'bcryptjs'; // Importamos hash e compare direto
 import { sign } from 'jsonwebtoken';
 
 const app = express();
-const prisma = new PrismaClient(); // Conecta no banco
+app.use(cors());
+const prisma = new PrismaClient();
 const port = 3333;
 
-// Habilita o servidor a entender JSON (IMPORTANTE!)
 app.use(express.json());
 
-// Rota para ver se está tudo vivo
+// Rota raiz
 app.get('/', (req: Request, res: Response) => {
   res.json({ mensagem: 'API do MyLinks rodando com Database! 🚀' });
 });
 
-// Rota para CRIAR um Usuário (O poder do Prisma!)
+// ==================================================
+// 1. ROTAS DE AUTENTICAÇÃO E USUÁRIO
+// ==================================================
+
+// Cadastro (Register)
 app.post('/users', async (req, res) => {
   const createUserSchema = z.object({
+    name: z.string(),
     email: z.string().email(),
-    password: z.string().min(6), // Mínimo de 6 caracteres
+    password: z.string().min(6),
+    slug: z.string().min(3).regex(/^[a-z0-9-]+$/),
   })
 
-  const { email, password } = createUserSchema.parse(req.body)
-
-  // 1. Criptografando a senha antes de salvar
-  // O número 8 é o "custo" (quanto mais alto, mais seguro e mais lento)
-  const passwordHash = await hash(password, 8)
-
   try {
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: passwordHash, // AQUI: Salvamos a hash, não a senha pura!
-      }
+    const { name, email, password, slug } = createUserSchema.parse(req.body)
+
+    const userExists = await prisma.user.findUnique({ where: { email } })
+    if (userExists) {
+      res.status(409).json({ message: "E-mail já existe." })
+      return
+    }
+
+    const slugExists = await prisma.user.findUnique({ where: { slug } })
+    if (slugExists) {
+      res.status(409).json({ message: "Este link já está em uso." })
+      return
+    }
+
+    // CORREÇÃO: Usamos 'hash' direto, não 'bcrypt.hash'
+    const hashedPassword = await hash(password, 10)
+
+    await prisma.user.create({
+      data: { name, email, password: hashedPassword, slug }
     })
 
-    return res.status(201).json(user)
-  } catch (error) {
-    return res.status(500).json({ erro: 'Não foi possível criar o usuário (Email já existe?)' })
+    res.status(201).json({ message: "Usuário criado com sucesso!" })
+    return
+
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+        res.status(400).json({ message: err.issues[0].message })
+        return
+    }
+    res.status(500).json({ message: "Erro interno." })
+    return
   }
 })
 
-// Rota de LOGIN (Autenticação)
+// Login
 app.post('/login', async (req, res) => {
   const loginSchema = z.object({
     email: z.string().email(),
     password: z.string(),
   })
 
-  const { email, password } = loginSchema.parse(req.body)
+  try {
+    const { email, password } = loginSchema.parse(req.body)
 
-  // 1. Buscar o usuário pelo e-mail
-  const user = await prisma.user.findUnique({
-    where: { email }
-  })
+    const user = await prisma.user.findUnique({ where: { email } })
 
-  // Se não achar o usuário, erro
-  if (!user) {
-    return res.status(400).json({ message: 'E-mail ou senha inválidos.' })
+    if (!user) {
+      res.status(400).json({ message: 'E-mail ou senha inválidos.' })
+      return
+    }
+
+    const isPasswordValid = await compare(password, user.password)
+
+    if (!isPasswordValid) {
+      res.status(400).json({ message: 'E-mail ou senha inválidos.' })
+      return
+    }
+
+    const token = sign({ userId: user.id }, 'segredo-do-jwt', { expiresIn: '7d' })
+
+    res.json({ token })
+    return
+
+  } catch (err) {
+    res.status(500).json({ message: "Erro interno ou dados inválidos." })
+    return
   }
-
-  // 2. Comparar a senha enviada com a senha criptografada do banco
-  const isPasswordValid = await compare(password, user.password)
-
-  // Se a senha não bater, erro
-  if (!isPasswordValid) {
-    return res.status(400).json({ message: 'E-mail ou senha inválidos.' })
-  }
-
-  // 3. Se tudo estiver certo, criar o Token
-  const token = sign({ userId: user.id }, 'segredo-do-jwt', {
-    expiresIn: '7d', // O token vale por 7 dias
-  })
-
-  return res.json({ token })
 })
 
-// Rota para criar um Link novo (AGORA AUTOMÁTICA)
+// ==================================================
+// 2. ROTAS DE LINKS (DASHBOARD)
+// ==================================================
+
+// Criar Link
 app.post('/links', authMiddleware, async (req, res) => {
-  
-  // 1. O Zod NÃO pede mais o userId (Removemos ele daqui)
   const createLinkSchema = z.object({
     title: z.string(),
-    url: z.string(),
+    url: z.string().url(), // Adicionei validação de URL válida
   })
 
-  const { title, url } = createLinkSchema.parse(req.body)
+  try {
+    const { title, url } = createLinkSchema.parse(req.body)
 
-  // 2. Salvamos no banco usando o ID que o middleware pegou
-  const newLink = await prisma.link.create({
-    data: {
-      title,
-      url,
-      userId: req.userId, // <--- O ID vem daqui agora! (Seguro)
+    const newLink = await prisma.link.create({
+      data: {
+        title,
+        url,
+        userId: req.userId,
+      }
+    })
+
+    res.status(201).json(newLink)
+    return
+  } catch (err) {
+    res.status(400).json({ message: "Dados inválidos." })
+    return
+  }
+})
+
+// Listar MEUS Links (Autenticado)
+// OBS: Removi a rota duplicada que listava tudo sem senha. Esta é a correta.
+app.get('/links', authMiddleware, async (req, res) => {
+  const links = await prisma.link.findMany({
+    where: {
+      userId: req.userId 
     }
   })
 
-  return res.status(201).json(newLink)
+  res.json(links)
+  return
 })
 
-// Rota para LISTAR os links
-app.get('/links', async (req, res) => {
-  // O prisma vai no banco e busca TUDO que tem na tabela Link
-  const links = await prisma.link.findMany()
-
-  return res.json(links)
-})
-
-// Rota para DELETAR um link (Blindada 🛡️)
+// Deletar Link
 app.delete('/links/:linkId', authMiddleware, async (req, res) => {
   const { linkId } = req.params
 
-  // Usamos deleteMany para garantir que só apaga se o ID bater E o dono for o usuário logado
   const result = await prisma.link.deleteMany({
     where: {
       id: linkId,
-      userId: req.userId, // <--- A Mágica: Só deleta se for SEU
+      userId: req.userId,
     },
   })
 
-  // O deleteMany retorna uma contagem. Se for 0, é porque não achou ou não é seu.
   if (result.count === 0) {
-    return res.status(401).json({ message: "Link não encontrado ou você não tem permissão." })
+    res.status(401).json({ message: "Link não encontrado ou permissão negada." })
+    return
   }
 
-  return res.status(200).json({ message: "Link deletado com sucesso!" })
+  res.status(200).json({ message: "Link deletado com sucesso!" })
+  return
+})
+
+// ==================================================
+// 3. ROTA PÚBLICA (PERFIL) - TEM QUE SER A ÚLTIMA!
+// ==================================================
+
+// Se essa rota ficasse lá em cima, o Express acharia que "/links" era um usuário chamado "links".
+// Por isso, rotas com parâmetros dinâmicos (:slug) sempre ficam no final.
+app.get('/:slug', async (req, res) => {
+  const { slug } = req.params
+
+  const user = await prisma.user.findUnique({
+    where: { slug: slug },
+    select: { 
+      id: true,
+      name: true,
+      email: true,
+      slug: true
+    }
+  })
+
+  if (!user) {
+    res.status(404).json({ message: "Perfil não encontrado" })
+    return
+  }
+
+  const links = await prisma.link.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: 'desc' }
+  })
+
+  res.json({ user, links })
+  return
 })
 
 app.listen(port, () => {
