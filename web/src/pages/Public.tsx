@@ -2,97 +2,122 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import '../App.css'
 
-interface Link {
+interface LinkItem {
   id: string
   title: string
   url: string
 }
 
-// Criamos uma tipagem para o User também
 interface UserData {
-  email: string
+  name: string
+  avatarUrl: string
+  links: LinkItem[]
 }
 
 export default function Public() {
-  const { userId } = useParams()
-  
-  // Agora temos dois estados: um pros Links e um pro Usuário
-  const [links, setLinks] = useState<Link[]>([])
+  const { slug } = useParams()
   const [user, setUser] = useState<UserData | null>(null)
+  const [loading, setLoading] = useState(true) // Estado de carregamento explícito
 
   useEffect(() => {
-    fetch(`http://localhost:3333/${userId}/links`)
-      .then(response => response.json())
-      .then(data => {
-        // O Backend agora manda { user, links }
-        setUser(data.user)
-        setLinks(data.links)
+    setLoading(true)
+    fetch(`http://localhost:3333/${slug}`)
+      .then(res => {
+        if (!res.ok) throw new Error('Usuário não encontrado')
+        return res.json()
       })
-  }, [userId])
+      .then(data => {
+        console.log("Dados recebidos:", data) // <--- Isso vai aparecer no F12 (Console)
+        setUser(data.user)
+      })
+      .catch(err => {
+        console.error("Erro:", err)
+        setUser(null)
+      })
+      .finally(() => setLoading(false))
+  }, [slug])
+
+  if (loading) {
+    return (
+      <div className="login-container">
+        <h1 style={{ color: '#fff' }}>Carregando... ⏳</h1>
+      </div>
+    )
+  }
+
+  // Se não achou o usuário ou deu erro
+  if (!user) {
+    return (
+      <div className="login-container">
+        <h1 style={{ color: '#fff' }}>Usuário não encontrado 😕</h1>
+      </div>
+    )
+  }
 
   return (
-    <div className="container">
-      <div style={{ 
-        width: '100%', 
-        maxWidth: '400px', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center', 
-        gap: '20px' 
-      }}>
+    <div className="login-container" style={{ justifyContent: 'flex-start', paddingTop: '60px' }}>
+      
+      <div style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px', padding: '0 20px' }}>
         
-        {/* Ícone de Perfil */}
-        <div style={{
-          width: '100px',
-          height: '100px',
-          borderRadius: '50%',
-          backgroundColor: '#8257e5',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '40px',
-          marginBottom: '10px',
-          border: '4px solid #202024'
-        }}>
-          👤
+        {/* --- CABEÇALHO --- */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+          <div style={{ 
+            width: '120px', height: '120px', borderRadius: '50%', border: '3px solid #8257e5', 
+            overflow: 'hidden', boxShadow: '0 0 30px rgba(130, 87, 229, 0.3)' 
+          }}>
+            {user.avatarUrl ? (
+              <img src={user.avatarUrl} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <div style={{ width: '100%', height: '100%', background: '#202024', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '40px' }}>👤</div>
+            )}
+          </div>
+
+          <div style={{ textAlign: 'center' }}>
+            <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#fff', margin: 0 }}>{user.name}</h1>
+            <p style={{ color: '#a1a1aa', marginTop: '4px', fontSize: '14px' }}>@{slug}</p>
+          </div>
         </div>
 
-        {/* --- NOME DINÂMICO AQUI 👇 --- */}
-        <h1 style={{ fontSize: '20px', marginBottom: '20px' }}>
-          {user ? user.email : 'Carregando...'}
-        </h1>
-        {/* ----------------------------- */}
-
-        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          {links.map(link => (
+        {/* --- LISTA DE LINKS (Com proteção contra erro) --- */}
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* O "?" depois de links evita o crash se a lista for undefined */}
+          {user.links?.map(link => (
             <a 
               key={link.id} 
               href={link.url} 
-              target="_blank"
-              style={{
-                backgroundColor: '#202024',
-                color: 'white',
-                padding: '16px',
-                borderRadius: '8px',
-                textDecoration: 'none',
-                textAlign: 'center',
-                fontWeight: 'bold',
-                border: '2px solid transparent',
-                transition: 'all 0.2s'
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={{ 
+                backgroundColor: '#18181b', color: '#fff', padding: '16px', borderRadius: '12px',
+                textAlign: 'center', textDecoration: 'none', fontWeight: '600', border: '1px solid #27272a',
+                transition: 'all 0.2s ease', display: 'block', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
               }}
-              onMouseOver={(e) => e.currentTarget.style.borderColor = '#8257e5'}
-              onMouseOut={(e) => e.currentTarget.style.borderColor = 'transparent'}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-3px)'
+                e.currentTarget.style.borderColor = '#8257e5'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.borderColor = '#27272a'
+              }}
             >
               {link.title}
             </a>
           ))}
+
+          {(!user.links || user.links.length === 0) && (
+            <p style={{ color: '#71717a', textAlign: 'center', fontSize: '14px' }}>
+              Este usuário ainda não adicionou links.
+            </p>
+          )}
         </div>
 
-        {links.length === 0 && <p>Este usuário ainda não tem links.</p>}
-
-        <footer style={{ marginTop: '40px', fontSize: '12px', color: '#777' }}>
-          Feito com MyLinks 🚀
+        <footer style={{ marginTop: '20px', paddingBottom: '40px' }}>
+           <a href="/" style={{ color: '#52525b', fontSize: '12px', textDecoration: 'none', fontWeight: '500' }}>
+             Feito com <span style={{ color: '#fff' }}>MyLinks</span> 🚀
+           </a>
         </footer>
+
       </div>
     </div>
   )

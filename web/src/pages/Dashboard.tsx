@@ -1,148 +1,252 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import '../App.css'
+import logoImg from '../assets/logo.png'
 
-interface Link {
+interface LinkItem {
   id: string
   title: string
   url: string
-  userId: string // <--- ADICIONADO: O Front precisa saber de quem é o link
 }
 
 export default function Dashboard() {
-  const [links, setLinks] = useState<Link[]>([])
-  const [newTitle, setNewTitle] = useState('')
-  const [newUrl, setNewUrl] = useState('')
+  const [links, setLinks] = useState<LinkItem[]>([])
+  const [title, setTitle] = useState('')
+  const [url, setUrl] = useState('')
   const navigate = useNavigate()
+  
+  const userSlug = localStorage.getItem('mylinks-slug')
 
   useEffect(() => {
-    fetchLinks()
-  }, [])
-
-  function fetchLinks() {
     const token = localStorage.getItem('mylinks-token')
+    if (!token) {
+      navigate('/')
+      return
+    }
+
     fetch('http://localhost:3333/links', {
       headers: { 'Authorization': `Bearer ${token}` }
     })
-    .then(response => response.json())
+    .then(res => {
+      if (!res.ok) throw new Error('Falha')
+      return res.json()
+    })
     .then(data => setLinks(data))
-  }
+    .catch(() => navigate('/'))
+  }, [navigate])
 
-  async function handleCreateLink(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleAddLink() {
     const token = localStorage.getItem('mylinks-token')
+    
+    if (!title || !url) return alert("Preencha tudo!")
 
     const response = await fetch('http://localhost:3333/links', {
       method: 'POST',
-      headers: {
+      headers: { 
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ title: newTitle, url: newUrl })
+      body: JSON.stringify({ title, url })
     })
 
     if (response.ok) {
-      setNewTitle('')
-      setNewUrl('')
-      fetchLinks()
+      const newLink = await response.json()
+      setLinks([...links, newLink])
+      setTitle('')
+      setUrl('')
     } else {
-      alert('Erro ao criar link!')
+      alert("Erro ao criar link")
     }
   }
 
   async function handleDeleteLink(id: string) {
     const token = localStorage.getItem('mylinks-token')
-    
-    if (confirm('Tem certeza que quer deletar esse link?')) {
-      await fetch(`http://localhost:3333/links/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      fetchLinks()
+    const response = await fetch(`http://localhost:3333/links/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+
+    if (response.ok) {
+      setLinks(links.filter(link => link.id !== id))
     }
   }
 
   function handleLogout() {
-    localStorage.removeItem('mylinks-token')
+    localStorage.clear()
     navigate('/')
   }
 
   return (
-    <div className="container">
-      <div className="card" style={{ maxWidth: '600px' }}>
-        
-        {/* Cabeçalho com Título e Logout */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <h1 style={{ fontSize: '24px', margin: 0 }}>Meus Links 🔗</h1>
-          <button onClick={handleLogout} style={{ backgroundColor: '#dc2626', width: 'auto', padding: '8px 15px', marginTop: 0 }}>
-            Sair
-          </button>
+    // AJUSTE 1: Diminui o paddingTop de 40px para 20px (Sobe tudo)
+    <div className="login-container" style={{ justifyContent: 'flex-start', paddingTop: '20px' }}>
+      
+      <div style={{ width: '100%', maxWidth: '800px', padding: '0 20px' }}>
+
+        {/* --- HEADER --- */}
+        <header style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          marginBottom: '20px', // AJUSTE 2: Diminui espaço abaixo do header
+          paddingBottom: '10px',
+          borderBottom: '1px solid rgba(255,255,255,0.1)' 
+        }}>
+          
+          {/* AJUSTE 3: Logo bem maior (120px) mas com margens negativas para não ocupar espaço extra */}
+          <img 
+            src={logoImg} 
+            alt="Logo MyLinks" 
+            style={{ 
+              height: '120px', 
+              width: 'auto', 
+              objectFit: 'contain',
+              marginTop: '-10px', 
+              marginBottom: '-10px' 
+            }} 
+          />
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            
+            <button 
+              onClick={() => navigate('/profile')} 
+              style={{ 
+                background: 'rgba(130, 87, 229, 0.1)', 
+                border: '1px solid #8257e5', 
+                color: '#8257e5', 
+                padding: '8px 16px', 
+                fontSize: '14px', 
+                cursor: 'pointer',
+                borderRadius: '8px',
+                fontWeight: '600',
+                transition: 'all 0.2s'
+              }}
+            >
+              ⚙️ Perfil
+            </button>
+
+            <a 
+              href={`http://localhost:5173/${userSlug}`} 
+              target="_blank" 
+              style={{ color: '#a1a1aa', textDecoration: 'none', fontSize: '14px', fontWeight: '500' }}
+            >
+              Ver site ↗
+            </a>
+            
+            <button 
+              onClick={handleLogout} 
+              style={{ 
+                background: 'transparent', 
+                color: '#e1e1e6', 
+                border: '1px solid #3f3f46', 
+                padding: '8px 16px', 
+                fontSize: '14px', 
+                cursor: 'pointer',
+                borderRadius: '8px',
+                fontWeight: '500'
+              }}
+            >
+              Sair
+            </button>
+          </div>
+        </header>
+
+        {/* --- CARD DE CRIAR LINK --- */}
+        <div style={{ 
+          backgroundColor: '#121214', 
+          padding: '32px', 
+          borderRadius: '16px', 
+          border: '1px solid #27272a',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          marginBottom: '40px' 
+        }}>
+          <h2 style={{ fontSize: '18px', marginBottom: '20px', color: '#eee', fontWeight: '600' }}>
+            Adicionar Novo Link
+          </h2>
+          
+          <div style={{ display: 'flex', gap: '15px', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', gap: '15px' }}>
+              
+              <div style={{ flex: 1 }}>
+                <input 
+                  className="input-modern" 
+                  placeholder="Título (ex: Meu Instagram)" 
+                  value={title} 
+                  onChange={e => setTitle(e.target.value)} 
+                />
+              </div>
+              
+              <div style={{ flex: 1 }}>
+                <input 
+                  className="input-modern"
+                  placeholder="URL (https://...)" 
+                  value={url} 
+                  onChange={e => setUrl(e.target.value)} 
+                />
+              </div>
+
+            </div>
+            
+            <button 
+              className="btn-primary" 
+              onClick={handleAddLink} 
+              style={{ marginTop: '5px' }}
+            >
+              + Adicionar Link
+            </button>
+          </div>
         </div>
 
-        {/* --- NOVO: Link para a Página Pública --- */}
-        {links.length > 0 && (
-          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-            <span style={{ color: '#ccc', fontSize: '14px' }}>Sua página está pública em: </span>
-            <br />
-            <a 
-              href={`/u/${links[0].userId}`} 
-              target="_blank" 
-              style={{ color: '#8257e5', fontWeight: 'bold', textDecoration: 'none' }}
-            >
-              /u/{links[0].userId} ➡️
-            </a>
-          </div>
-        )}
-        {/* ---------------------------------------- */}
+        {/* --- LISTA DE LINKS --- */}
+        <h3 style={{ fontSize: '18px', color: '#ccc', marginBottom: '20px', fontWeight: '500' }}>Seus Links Ativos</h3>
 
-        <form onSubmit={handleCreateLink} style={{ display: 'flex', gap: '10px', marginBottom: '30px' }}>
-          <input 
-            placeholder="Nome do Link" 
-            value={newTitle} 
-            onChange={e => setNewTitle(e.target.value)}
-            required
-            style={{ flex: 1 }}
-          />
-          <input 
-            placeholder="URL (https://...)" 
-            value={newUrl} 
-            onChange={e => setNewUrl(e.target.value)}
-            required
-            style={{ flex: 1 }}
-          />
-          <button type="submit" style={{ marginTop: 0, width: 'auto', backgroundColor: '#04d361' }}>
-            +
-          </button>
-        </form>
-
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          {links.map(link => (
-            <li key={link.id} style={{ 
-              backgroundColor: '#121214', 
-              padding: '15px', 
-              borderRadius: '5px', 
-              marginBottom: '10px',
-              border: '1px solid #323238',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '40px' }}>
+          {links.length === 0 && (
+            <div style={{ 
+              textAlign: 'center', color: '#777', padding: '40px', 
+              border: '1px dashed #333', borderRadius: '8px' 
             }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                <span style={{ fontWeight: 'bold' }}>{link.title}</span>
-                <a href={link.url} target="_blank" style={{ color: '#8257e5', fontSize: '14px' }}>{link.url}</a>
+              Você ainda não tem links cadastrados. Adicione o primeiro acima! ☝️
+            </div>
+          )}
+          
+          {links.map(link => (
+            <div key={link.id} style={{ 
+              backgroundColor: '#18181b', 
+              padding: '20px', 
+              borderRadius: '12px', 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              border: '1px solid #27272a',
+              transition: 'transform 0.2s',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            >
+              <div style={{ overflow: 'hidden' }}>
+                <strong style={{ display: 'block', fontSize: '16px', color: '#fff', marginBottom: '4px' }}>{link.title}</strong>
+                <small style={{ color: '#8257e5', fontSize: '13px' }}>{link.url}</small>
               </div>
               
               <button 
                 onClick={() => handleDeleteLink(link.id)}
-                style={{ backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', width: 'auto', padding: '5px 10px', marginTop: 0 }}
+                style={{ 
+                  background: 'transparent', 
+                  border: '1px solid #ef4444', 
+                  color: '#ef4444', 
+                  padding: '8px 16px', 
+                  fontSize: '12px', 
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: '600'
+                }}
               >
-                🗑️
+                Apagar
               </button>
-            </li>
+            </div>
           ))}
-        </ul>
-        
-        {links.length === 0 && <p style={{ textAlign: 'center', color: '#777' }}>Nenhum link criado ainda.</p>}
+        </div>
+
       </div>
     </div>
   )

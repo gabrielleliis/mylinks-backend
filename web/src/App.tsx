@@ -1,19 +1,31 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import React from 'react'
 import Login from './pages/Login'
+import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
-import Public from './pages/Public' // <--- IMPORTAR AQUI
-import './App.css'
+import Public from './pages/Public'
+import Profile from './pages/Profile' // <--- TEM QUE TER ESSE IMPORT
 
-export default function App() {
+function PrivateRoute({ children }: { children: React.ReactNode }) {
+  const token = localStorage.getItem('mylinks-token')
+  return token ? children : <Navigate to="/" />
+}
+
+function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
         
-        {/* Rota dinâmica: qualquer coisa depois de /u/ vira userId */}
-        <Route path="/u/:userId" element={<Public />} /> 
+        {/* ESSA LINHA AQUI É O SEGREDO 👇 */}
+        <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+        
+        <Route path="/:slug" element={<Public />} />
       </Routes>
     </BrowserRouter>
   )
 }
+
+export default App

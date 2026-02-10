@@ -9,14 +9,17 @@ datasource db {
 }
 
 // Modelo do Usuário
+// Modelo do Usuário
 model User {
   id        String   @id @default(uuid())
+  name      String?  // <--- ADICIONAMOS ESSA LINHA (O '?' torna opcional)
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
-  
+  avatarUrl String?
+   
   slug      String   @unique
-  
+   
   // Relacionamento: Um usuário tem vários links
   links     Link[]
 

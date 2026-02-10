@@ -1,67 +1,68 @@
-/* Isso faz a tela inteira ficar escura e centraliza tudo */
-.container {
-  height: 100vh;
-  width: 100vw;
-  background-color: #121214;
+/* Fundo Global Escuro */
+body {
+  background-color: #09090a;
+  margin: 0;
+  font-family: 'Inter', sans-serif; /* Se tiver Inter, senão usa padrão */
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Container com efeito de luz sutil no fundo */
+.login-container {
+  background-color: #09090a;
+  background-image: radial-gradient(circle at 50% 0%, #1c1c2e 0%, #09090a 60%);
+  min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-family: Arial, sans-serif;
 }
 
-/* Isso desenha o cartão cinza no meio */
-.card {
-  background-color: #202024;
-  padding: 30px;
+/* Animação suave para tudo */
+.transition-all {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Input Moderno: Borda sutil e brilho roxo ao focar */
+.input-modern {
+  background-color: #09090a;
+  border: 1px solid #27272a;
+  color: #fff;
   border-radius: 8px;
+  padding: 0 16px;
+  height: 48px;
   width: 100%;
-  max-width: 400px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-h1 {
-  font-size: 24px;
-  margin-bottom: 10px;
-  text-align: center;
-}
-
-/* Estilo dos campos de texto */
-.input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-input {
-  background-color: #121214;
-  border: 1px solid #323238;
-  color: white;
-  padding: 12px;
-  border-radius: 5px;
-  font-size: 16px;
+  font-size: 14px;
   outline: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2) inset;
 }
 
-input:focus {
-  border-color: #8257e5; /* Roxo bonito quando clica */
+.input-modern:focus {
+  border-color: #8257e5;
+  box-shadow: 0 0 0 4px rgba(130, 87, 229, 0.15); /* O brilho roxo suave */
 }
 
-/* Estilo do botão */
-button {
+/* Botão Premium: Brilho e profundidade */
+.btn-primary {
   background-color: #8257e5;
   color: white;
-  padding: 12px;
   border: none;
-  border-radius: 5px;
-  font-weight: bold;
+  height: 50px;
+  width: 100%;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
   cursor: pointer;
-  margin-top: 10px;
-  transition: 0.2s;
+  transition: all 0.2s;
+  margin-top: 24px;
 }
 
-button:hover {
-  background-color: #6f48c9; /* Escurece um pouco ao passar o mouse */
+.btn-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(130, 87, 229, 0.3); /* Sombra colorida */
+}
+
+.btn-primary:active {
+  transform: translateY(0px);
 }

@@ -3,17 +3,20 @@ import express, { Request, Response } from 'express';
 import { authMiddleware } from './middleware';
 import { z } from 'zod';
 import { PrismaClient } from '@prisma/client';
-import { hash, compare } from 'bcryptjs'; // Importamos hash e compare direto
+import bcrypt from 'bcryptjs';
 import { sign } from 'jsonwebtoken';
+import { upload } from './config/multer'; // <--- COMENTE ESSA LINHA ASSIM (COM DUAS BARRAS)
+
+console.log("PASSO 1: Começou o script...")
 
 const app = express();
 app.use(cors());
+console.log("PASSO 2: Conectando ao Prisma...")
 const prisma = new PrismaClient();
-const port = 3333;
+const port = 3333; // <--- Garanta que está assim, limpo.
 
 app.use(express.json());
 
-// Rota raiz
 app.get('/', (req: Request, res: Response) => {
   res.json({ mensagem: 'API do MyLinks rodando com Database! 🚀' });
 });
@@ -22,7 +25,6 @@ app.get('/', (req: Request, res: Response) => {
 // 1. ROTAS DE AUTENTICAÇÃO E USUÁRIO
 // ==================================================
 
-// Cadastro (Register)
 app.post('/users', async (req, res) => {
   const createUserSchema = z.object({
     name: z.string(),
@@ -46,8 +48,7 @@ app.post('/users', async (req, res) => {
       return
     }
 
-    // CORREÇÃO: Usamos 'hash' direto, não 'bcrypt.hash'
-    const hashedPassword = await hash(password, 10)
+    const hashedPassword = await bcrypt.hash(password, 10)
 
     await prisma.user.create({
       data: { name, email, password: hashedPassword, slug }
@@ -57,16 +58,17 @@ app.post('/users', async (req, res) => {
     return
 
   } catch (err) {
+    console.error("ERRO AO CRIAR USUÁRIO:", err) 
+
     if (err instanceof z.ZodError) {
-        res.status(400).json({ message: err.issues[0].message })
-        return
+       res.status(400).json({ message: err.issues[0].message })
+       return
     }
-    res.status(500).json({ message: "Erro interno." })
+    res.status(500).json({ message: "Erro interno. Verifique o terminal do servidor." })
     return
   }
 })
 
-// Login
 app.post('/login', async (req, res) => {
   const loginSchema = z.object({
     email: z.string().email(),
@@ -83,7 +85,7 @@ app.post('/login', async (req, res) => {
       return
     }
 
-    const isPasswordValid = await compare(password, user.password)
+    const isPasswordValid = await bcrypt.compare(password, user.password)
 
     if (!isPasswordValid) {
       res.status(400).json({ message: 'E-mail ou senha inválidos.' })
@@ -92,12 +94,51 @@ app.post('/login', async (req, res) => {
 
     const token = sign({ userId: user.id }, 'segredo-do-jwt', { expiresIn: '7d' })
 
-    res.json({ token })
+    res.json({ 
+      token, 
+      user: { 
+        name: user.name, 
+        email: user.email, 
+        slug: user.slug,
+        avatarUrl: user.avatarUrl // Retorna a foto se tiver
+      } 
+    })
     return
 
   } catch (err) {
-    res.status(500).json({ message: "Erro interno ou dados inválidos." })
+    console.error("ERRO NO LOGIN:", err)
+    res.status(500).json({ message: "Erro interno." })
     return
+  }
+})
+
+// --- NOVA ROTA DE ATUALIZAR PERFIL COM FOTO ---
+app.put('/users', authMiddleware, upload.single('image'), async (req, res) => {
+  const updateUserSchema = z.object({
+    name: z.string().optional(),
+  })
+
+  try {
+    // 1. Pega o nome do corpo da requisição (se tiver)
+    const { name } = updateUserSchema.parse(req.body)
+    
+    // 2. Pega o arquivo enviado (se tiver)
+    const file = req.file 
+
+    // 3. Atualiza no Banco de Dados
+    const updatedUser = await prisma.user.update({
+      where: { id: req.userId }, // ID vindo do token (authMiddleware)
+      data: {
+        name: name || undefined, // Só atualiza se mandou nome novo
+        avatarUrl: file ? file.path : undefined // Só atualiza se mandou foto nova
+      }
+    })
+
+    res.json({ message: "Perfil atualizado!", user: updatedUser })
+
+  } catch (err) {
+    console.error("ERRO AO ATUALIZAR:", err)
+    res.status(500).json({ message: "Erro ao atualizar perfil." })
   }
 })
 
@@ -105,11 +146,10 @@ app.post('/login', async (req, res) => {
 // 2. ROTAS DE LINKS (DASHBOARD)
 // ==================================================
 
-// Criar Link
 app.post('/links', authMiddleware, async (req, res) => {
   const createLinkSchema = z.object({
     title: z.string(),
-    url: z.string().url(), // Adicionei validação de URL válida
+    url: z.string().url(),
   })
 
   try {
@@ -126,31 +166,26 @@ app.post('/links', authMiddleware, async (req, res) => {
     res.status(201).json(newLink)
     return
   } catch (err) {
+    console.error("ERRO AO CRIAR LINK:", err)
     res.status(400).json({ message: "Dados inválidos." })
     return
   }
 })
 
-// Listar MEUS Links (Autenticado)
-// OBS: Removi a rota duplicada que listava tudo sem senha. Esta é a correta.
 app.get('/links', authMiddleware, async (req, res) => {
   const links = await prisma.link.findMany({
-    where: {
-      userId: req.userId 
-    }
+    where: { userId: req.userId }
   })
-
   res.json(links)
   return
 })
 
-// Deletar Link
 app.delete('/links/:linkId', authMiddleware, async (req, res) => {
   const { linkId } = req.params
 
   const result = await prisma.link.deleteMany({
     where: {
-      id: linkId,
+      id: linkId as string,
       userId: req.userId,
     },
   })
@@ -165,38 +200,34 @@ app.delete('/links/:linkId', authMiddleware, async (req, res) => {
 })
 
 // ==================================================
-// 3. ROTA PÚBLICA (PERFIL) - TEM QUE SER A ÚLTIMA!
+// 3. ROTA PÚBLICA (PERFIL)
 // ==================================================
 
-// Se essa rota ficasse lá em cima, o Express acharia que "/links" era um usuário chamado "links".
-// Por isso, rotas com parâmetros dinâmicos (:slug) sempre ficam no final.
-app.get('/:slug', async (req, res) => {
-  const { slug } = req.params
+// ROTA PÚBLICA (Buscar usuário pelo slug)
+  app.get('/:slug', async (req, res) => {
+    const { slug } = req.params
 
-  const user = await prisma.user.findUnique({
-    where: { slug: slug },
-    select: { 
-      id: true,
-      name: true,
-      email: true,
-      slug: true
+    const user = await prisma.user.findUnique({
+      where: { slug },
+      include: { 
+        links: true 
+      },
+      // APAGUEI O 'select' DAQUI, POIS ELE DÁ CONFLITO COM O 'include'
+    })
+
+    if (!user) {
+      return res.status(404).json({ message: 'Perfil não encontrado' })
     }
+
+    return res.json({ user })
   })
 
-  if (!user) {
-    res.status(404).json({ message: "Perfil não encontrado" })
-    return
-  }
+// ==================================================
+// 4. LIGAR O SERVIDOR (O PASSO FINAL)
+// ==================================================
 
-  const links = await prisma.link.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: 'desc' }
-  })
-
-  res.json({ user, links })
-  return
-})
+console.log("PASSO 3: Tentando abrir a porta " + port + "...")
 
 app.listen(port, () => {
-  console.log(`Servidor rodando em http://localhost:${port}`);
+  console.log(`✅ SUCESSO! Servidor rodando em http://localhost:${port}`);
 });
