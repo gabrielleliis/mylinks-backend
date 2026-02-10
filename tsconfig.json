@@ -10,5 +10,6 @@
     "noImplicitAny": false,
     "esModuleInterop": true,
     "resolveJsonModule": true
-  }
+  },
+  "exclude": ["web", "node_modules"]
 }
