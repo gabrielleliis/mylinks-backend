@@ -1,83 +1,93 @@
 # 🔗 MyLinks
 
-O **MyLinks** é uma plataforma completa de agregação de links (estilo Linktree), desenvolvida para centralizar sua presença digital em um único lugar. Com ele, usuários podem criar perfis personalizados, gerenciar links e acompanhar métricas de acesso em tempo real.
+O **MyLinks** é uma plataforma completa de agregação de links (estilo Linktree), criada para centralizar toda a presença digital do usuário em um único lugar. A aplicação permite criar perfis personalizados, gerenciar links e acompanhar métricas de acesso em tempo real.
 
 ![Preview do Projeto](https://placehold.co/1200x400/8257e5/FFF?text=MyLinks+Preview)
-*(Em breve: Imagem real do dashboard)*
+
+---
 
 ## 🚀 Funcionalidades
 
--   ✅ **Autenticação Segura:** Sistema de Login e Cadastro de contas.
--   ✅ **Dashboard Administrativo:** Painel para adicionar, editar e excluir links.
--   ✅ **Página Pública:** Perfil único (ex: `mylinks.com/seu-nome`) acessível externamente.
--   ✅ **Analytics em Tempo Real:** Contador de cliques para monitorar o engajamento de cada link.
--   ✅ **Customização de Perfil:** Upload de foto de perfil e edição de dados do usuário.
--   📱 **Design Responsivo:** Interface moderna e adaptada para dispositivos móveis e desktop.
+- ✅ **Autenticação Segura** — Sistema de login e cadastro de usuários  
+- ✅ **Dashboard Administrativo** — Painel para adicionar, editar e excluir links  
+- ✅ **Página Pública** — Perfil único acessível externamente  
+- ✅ **Analytics em Tempo Real** — Contador de cliques para monitorar engajamento  
+- ✅ **Customização de Perfil** — Upload de foto e edição de dados  
+- 📱 **Design Responsivo** — Interface moderna para mobile e desktop  
+
+---
 
 ## 🛠️ Tecnologias Utilizadas
 
-Este projeto foi construído utilizando as melhores práticas do ecossistema JavaScript/TypeScript moderno:
+**Backend**
+- Node.js  
+- Fastify  
+- Prisma ORM  
+- Zod  
+- JWT  
 
-### Backend (API)
--   **Node.js** & **Fastify**: Framework web focado em performance e baixa latência.
--   **TypeScript**: Tipagem estática para maior segurança e produtividade.
--   **Prisma ORM**: Manipulação de banco de dados (PostgreSQL/SQLite).
--   **Zod**: Validação rigorosa de dados de entrada.
--   **JWT**: Autenticação via JSON Web Token.
+**Frontend**
+- React.js  
+- Vite  
+- TypeScript  
+- CSS Modules  
 
-### Frontend (Web)
--   **React.js** & **Vite**: Biblioteca para construção de interfaces rápidas.
--   **TypeScript**: Integração perfeita com o backend.
--   **CSS Moderno**: Estilização responsiva com foco em UX/UI.
--   **React Router DOM**: Gerenciamento de rotas da aplicação (SPA).
+**Banco de Dados**
+- SQLite (Desenvolvimento)  
+- PostgreSQL (Produção)  
 
-## 📂 Estrutura do Projeto
+---
 
-O repositório está organizado como um monorepo contendo tanto o servidor quanto o cliente web:
+## 📂 Como Rodar Localmente
 
--   📂 **`/server`**: API RESTful, Regras de Negócio e Banco de Dados.
--   📂 **`/web`**: Interface do Usuário (Frontend).
+Siga o passo a passo abaixo para executar o projeto na sua máquina.
 
-## 🎲 Como Rodar Localmente
+### 1️⃣ Clone o repositório
 
-Siga os passos abaixo para executar o projeto na sua máquina:
-
-### Pré-requisitos
-Certifique-se de ter instalado:
--   [Node.js](https://nodejs.org/) (v18 ou superior)
--   [Git](https://git-scm.com/)
-
-### 1. Clone o repositório
 ```bash
-git clone [https://github.com/gabrielleliis/mylinks-backend.git](https://github.com/gabrielleliis/mylinks-backend.git)
+git clone https://github.com/gabrielleliis/mylinks-backend.git
 cd mylinks-backend
+```
 
-2. Configurando o Backend (Servidor)
-Abra um terminal, entre na pasta do servidor e instale as dependências:
+---
 
-Bash
+### 2️⃣ Configurando o Backend (Servidor)
+
+Abra um terminal na pasta do servidor e instale as dependências:
+
+```bash
 cd server
 npm install
-Crie um arquivo .env na raiz da pasta server (ou use as configurações padrão do Prisma para SQLite localmente):
+```
 
-Bash
-# Execute as migrações para criar as tabelas no banco de dados
+Crie o arquivo `.env` (se necessário), execute as migrações e inicie o servidor:
+
+```bash
 npx prisma migrate dev
-
-# Inicie o servidor
 npm run dev
-🚀 O servidor estará rodando em: http://localhost:3333
+```
 
-3. Configurando o Frontend (Web)
-Abra um segundo terminal (mantenha o anterior rodando), entre na pasta web e inicie a interface:
+🚀 O servidor estará rodando em:  
+**http://localhost:3333**
 
-Bash
+---
+
+### 3️⃣ Configurando o Frontend (Web)
+
+Abra um segundo terminal, entre na pasta do frontend e inicie o projeto:
+
+```bash
 cd web
 npm install
 npm run dev
-🎨 Acesse a aplicação em: http://localhost:5173
+```
 
-🤝 Contribuição
-Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou enviar pull requests.
+🎨 Acesse a aplicação em:  
+**http://localhost:5173**
 
-<p align="center"> Feito com 💜 por <a href="https://www.google.com/search?q=https://github.com/gabrielleliis">Gabriel Lelis</a> </p>
+---
+
+<p align="center">
+Feito com 💜 por  
+<a href="https://github.com/gabrielleliis">Gabriel Lelis</a>
+</p>
