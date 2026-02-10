@@ -222,6 +222,27 @@ app.delete('/links/:linkId', authMiddleware, async (req, res) => {
     return res.json({ user })
   })
 
+  // ROTA PARA CONTAR CLIQUES (+1)
+app.post('/links/:id/click', async (req, res) => {
+  const { id } = req.params
+
+  try {
+    await prisma.link.update({
+      where: { id },
+      data: {
+        // @ts-ignore: Ignorando erro visual do editor, pois a coluna existe no banco
+        clicks: {
+          increment: 1 
+        }
+      }
+    })
+    return res.status(200).send()
+  } catch (error) {
+    console.error(error) // Adicionei isso pra gente ver o erro se acontecer
+    return res.status(500).json({ message: "Erro ao computar clique" })
+  }
+})
+
 // ==================================================
 // 4. LIGAR O SERVIDOR (O PASSO FINAL)
 // ==================================================

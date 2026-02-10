@@ -17,17 +17,17 @@ interface UserData {
 export default function Public() {
   const { slug } = useParams()
   const [user, setUser] = useState<UserData | null>(null)
-  const [loading, setLoading] = useState(true) // Estado de carregamento explícito
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     setLoading(true)
+    // O backend agora já traz os links automaticamente
     fetch(`http://localhost:3333/${slug}`)
       .then(res => {
         if (!res.ok) throw new Error('Usuário não encontrado')
         return res.json()
       })
       .then(data => {
-        console.log("Dados recebidos:", data) // <--- Isso vai aparecer no F12 (Console)
         setUser(data.user)
       })
       .catch(err => {
@@ -37,6 +37,14 @@ export default function Public() {
       .finally(() => setLoading(false))
   }, [slug])
 
+  // --- FUNÇÃO QUE CONTA O CLIQUE 👇 ---
+  function handleLinkClick(id: string) {
+    // Manda um aviso pro servidor ("Ei, clicaram no link ID tal")
+    fetch(`http://localhost:3333/links/${id}/click`, {
+      method: 'POST'
+    }).catch(err => console.error("Erro ao computar clique:", err))
+  }
+
   if (loading) {
     return (
       <div className="login-container">
@@ -45,7 +53,6 @@ export default function Public() {
     )
   }
 
-  // Se não achou o usuário ou deu erro
   if (!user) {
     return (
       <div className="login-container">
@@ -78,15 +85,18 @@ export default function Public() {
           </div>
         </div>
 
-        {/* --- LISTA DE LINKS (Com proteção contra erro) --- */}
+        {/* --- LISTA DE LINKS --- */}
         <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* O "?" depois de links evita o crash se a lista for undefined */}
           {user.links?.map(link => (
             <a 
               key={link.id} 
               href={link.url} 
               target="_blank" 
               rel="noopener noreferrer"
+              
+              // 👇 O SEGREDO ESTÁ AQUI: O evento onClick
+              onClick={() => handleLinkClick(link.id)}
+
               style={{ 
                 backgroundColor: '#18181b', color: '#fff', padding: '16px', borderRadius: '12px',
                 textAlign: 'center', textDecoration: 'none', fontWeight: '600', border: '1px solid #27272a',

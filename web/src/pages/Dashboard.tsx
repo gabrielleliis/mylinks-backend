@@ -7,6 +7,7 @@ interface LinkItem {
   id: string
   title: string
   url: string
+  clicks: number // <--- Agora o link tem cliques!
 }
 
 export default function Dashboard() {
@@ -77,7 +78,6 @@ export default function Dashboard() {
   }
 
   return (
-    // AJUSTE 1: Diminui o paddingTop de 40px para 20px (Sobe tudo)
     <div className="login-container" style={{ justifyContent: 'flex-start', paddingTop: '20px' }}>
       
       <div style={{ width: '100%', maxWidth: '800px', padding: '0 20px' }}>
@@ -87,12 +87,11 @@ export default function Dashboard() {
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center', 
-          marginBottom: '20px', // AJUSTE 2: Diminui espaço abaixo do header
+          marginBottom: '20px',
           paddingBottom: '10px',
           borderBottom: '1px solid rgba(255,255,255,0.1)' 
         }}>
           
-          {/* AJUSTE 3: Logo bem maior (120px) mas com margens negativas para não ocupar espaço extra */}
           <img 
             src={logoImg} 
             alt="Logo MyLinks" 
@@ -106,7 +105,6 @@ export default function Dashboard() {
           />
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            
             <button 
               onClick={() => navigate('/profile')} 
               style={{ 
@@ -165,7 +163,6 @@ export default function Dashboard() {
           
           <div style={{ display: 'flex', gap: '15px', flexDirection: 'column' }}>
             <div style={{ display: 'flex', gap: '15px' }}>
-              
               <div style={{ flex: 1 }}>
                 <input 
                   className="input-modern" 
@@ -174,7 +171,6 @@ export default function Dashboard() {
                   onChange={e => setTitle(e.target.value)} 
                 />
               </div>
-              
               <div style={{ flex: 1 }}>
                 <input 
                   className="input-modern"
@@ -183,9 +179,7 @@ export default function Dashboard() {
                   onChange={e => setUrl(e.target.value)} 
                 />
               </div>
-
             </div>
-            
             <button 
               className="btn-primary" 
               onClick={handleAddLink} 
@@ -196,7 +190,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* --- LISTA DE LINKS --- */}
+        {/* --- LISTA DE LINKS COM CONTADOR 📊 --- */}
         <h3 style={{ fontSize: '18px', color: '#ccc', marginBottom: '20px', fontWeight: '500' }}>Seus Links Ativos</h3>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '40px' }}>
@@ -219,30 +213,39 @@ export default function Dashboard() {
               alignItems: 'center', 
               border: '1px solid #27272a',
               transition: 'transform 0.2s',
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-            >
+            }}>
               <div style={{ overflow: 'hidden' }}>
                 <strong style={{ display: 'block', fontSize: '16px', color: '#fff', marginBottom: '4px' }}>{link.title}</strong>
                 <small style={{ color: '#8257e5', fontSize: '13px' }}>{link.url}</small>
               </div>
               
-              <button 
-                onClick={() => handleDeleteLink(link.id)}
-                style={{ 
-                  background: 'transparent', 
-                  border: '1px solid #ef4444', 
-                  color: '#ef4444', 
-                  padding: '8px 16px', 
-                  fontSize: '12px', 
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: '600'
-                }}
-              >
-                Apagar
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                
+                {/* AQUI ESTÁ O CONTADOR! 👇 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#a1a1aa' }}>
+                  <span>📊</span>
+                  <span style={{ fontWeight: 'bold', color: '#fff', fontSize: '16px' }}>
+                    {link.clicks || 0} {/* Mostra 0 se não tiver cliques ainda */}
+                  </span>
+                  <span style={{ fontSize: '12px' }}>cliques</span>
+                </div>
+
+                <button 
+                  onClick={() => handleDeleteLink(link.id)}
+                  style={{ 
+                    background: 'transparent', 
+                    border: '1px solid #ef4444', 
+                    color: '#ef4444', 
+                    padding: '8px 16px', 
+                    fontSize: '12px', 
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: '600'
+                  }}
+                >
+                  Apagar
+                </button>
+              </div>
             </div>
           ))}
         </div>
