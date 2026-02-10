@@ -52,6 +52,31 @@ Certifique-se de ter instalado:
 git clone [https://github.com/gabrielleliis/mylinks-backend.git](https://github.com/gabrielleliis/mylinks-backend.git)
 cd mylinks-backend
 
+2. Configurando o Backend (Servidor)
+Abra um terminal, entre na pasta do servidor e instale as dependências:
+
+Bash
+cd server
+npm install
+Crie um arquivo .env na raiz da pasta server (ou use as configurações padrão do Prisma para SQLite localmente):
+
+Bash
+# Execute as migrações para criar as tabelas no banco de dados
+npx prisma migrate dev
+
+# Inicie o servidor
+npm run dev
+🚀 O servidor estará rodando em: http://localhost:3333
+
+3. Configurando o Frontend (Web)
+Abra um segundo terminal (mantenha o anterior rodando), entre na pasta web e inicie a interface:
+
+Bash
+cd web
+npm install
+npm run dev
+🎨 Acesse a aplicação em: http://localhost:5173
+
 🤝 Contribuição
 Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou enviar pull requests.
 
