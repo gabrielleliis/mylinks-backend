@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import '../App.css'
 import logoImg from '../assets/logo.png'
+import { API_URL } from '../api'
 
 export default function Register() {
   const [name, setName] = useState('')
@@ -16,7 +17,7 @@ export default function Register() {
     }
 
     try {
-      const response = await fetch('http://localhost:3333/users', {
+      const response = await fetch(`${API_URL}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password, slug })

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import type { ChangeEvent } from 'react' // <--- MUDANÇA AQUI: import separado com 'type'
 import { useNavigate } from 'react-router-dom'
 import '../App.css'
+import { API_URL } from '../api'
 
 export default function Profile() {
   const [name, setName] = useState('')
@@ -16,7 +17,7 @@ export default function Profile() {
     const slug = localStorage.getItem('mylinks-slug')
     
     if (slug) {
-      fetch(`http://localhost:3333/${slug}`)
+      fetch(`${API_URL}/${slug}`)
         .then(res => res.json())
         .then(data => {
           if (data.user) {

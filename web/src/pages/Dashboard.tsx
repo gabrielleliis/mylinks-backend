@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import '../App.css'
 import logoImg from '../assets/logo.png'
+import { API_URL } from '../api'
 
 interface LinkItem {
   id: string
@@ -25,7 +26,7 @@ export default function Dashboard() {
       return
     }
 
-    fetch('http://localhost:3333/links', {
+    fetch(`${API_URL}/users/me`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     .then(res => {

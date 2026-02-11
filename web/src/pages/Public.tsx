@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import '../App.css'
+import { API_URL } from '../api'
 
 interface LinkItem {
   id: string
@@ -22,7 +23,7 @@ export default function Public() {
   useEffect(() => {
     setLoading(true)
     // O backend agora já traz os links automaticamente
-    fetch(`http://localhost:3333/${slug}`)
+    fetch(`${API_URL}/${slug}`)
       .then(res => {
         if (!res.ok) throw new Error('Usuário não encontrado')
         return res.json()
