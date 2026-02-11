@@ -41,7 +41,7 @@ export default function Public() {
   // --- FUNÇÃO QUE CONTA O CLIQUE 👇 ---
   function handleLinkClick(id: string) {
     // Manda um aviso pro servidor ("Ei, clicaram no link ID tal")
-    fetch(`http://localhost:3333/links/${id}/click`, {
+    fetch(`${API_URL}/links/${id}/click`, {
       method: 'POST'
     }).catch(err => console.error("Erro ao computar clique:", err))
   }

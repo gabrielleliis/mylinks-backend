@@ -51,7 +51,7 @@ export default function Profile() {
     if (selectedFile) formData.append('image', selectedFile)
 
     try {
-      const response = await fetch('http://localhost:3333/users', {
+      const response = await fetch(`${API_URL}/users`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`
