@@ -116,20 +116,22 @@ app.post('/login', async (req, res) => {
 app.get('/users/me', authMiddleware, async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
-      where: { id: req.userId }, // Pega o ID de dentro do token
+      where: { id: req.userId },
+      include: { links: true } // <--- ADICIONEI ISSO AQUI! (TRAZ OS LINKS)
     })
 
     if (!user) {
       return res.status(404).json({ message: "Usuário não encontrado." })
     }
 
-    // Retorna os dados (sem a senha!)
+    // Retorna os dados + os links
     return res.json({
       user: {
         name: user.name,
         email: user.email,
         slug: user.slug,
-        avatarUrl: user.avatarUrl
+        avatarUrl: user.avatarUrl,
+        links: user.links || [] // <--- E ENVIAMOS OS LINKS AQUI
       }
     })
   } catch (err) {
