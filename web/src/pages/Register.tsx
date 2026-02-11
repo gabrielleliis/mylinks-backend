@@ -81,7 +81,7 @@ export default function Register() {
             <label style={{ fontSize: '13px', fontWeight: '500', color: '#a1a1aa' }}>Seu Nome</label>
             <input 
               className="input-modern"
-              placeholder="Ex: Gabriel Lelis"
+              placeholder="Digite seu nome completo"
               value={name} onChange={e => setName(e.target.value)}
             />
           </div>
@@ -106,7 +106,7 @@ export default function Register() {
               <span style={{ color: '#555', fontSize: '12px' }}>mylinks.com/</span>
               <input 
                 className="input-modern"
-                placeholder="gabriel"
+                placeholder="seu-usuario"
                 value={slug} onChange={e => setSlug(e.target.value)}
               />
             </div>
