@@ -112,6 +112,31 @@ app.post('/login', async (req, res) => {
   }
 })
 
+// --- ROTA QUE FALTAVA: PEGAR DADOS DO USUÁRIO LOGADO (/ME) ---
+app.get('/users/me', authMiddleware, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId }, // Pega o ID de dentro do token
+    })
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuário não encontrado." })
+    }
+
+    // Retorna os dados (sem a senha!)
+    return res.json({
+      user: {
+        name: user.name,
+        email: user.email,
+        slug: user.slug,
+        avatarUrl: user.avatarUrl
+      }
+    })
+  } catch (err) {
+    return res.status(500).json({ message: "Erro ao buscar perfil." })
+  }
+})
+
 // --- NOVA ROTA DE ATUALIZAR PERFIL COM FOTO ---
 app.put('/users', authMiddleware, upload.single('image'), async (req, res) => {
   const updateUserSchema = z.object({
