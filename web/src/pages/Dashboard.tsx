@@ -8,7 +8,7 @@ interface LinkItem {
   id: string
   title: string
   url: string
-  clicks: number // <--- Agora o link tem cliques!
+  clicks: number
 }
 
 export default function Dashboard() {
@@ -21,20 +21,34 @@ export default function Dashboard() {
 
   useEffect(() => {
     const token = localStorage.getItem('mylinks-token')
+    
     if (!token) {
       navigate('/')
       return
     }
 
+    // --- CORREÇÃO 1: Usando API_URL e tratando erro ---
     fetch(`${API_URL}/users/me`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
-    .then(res => {
-      if (!res.ok) throw new Error('Falha')
+    .then(async (res) => {
+      if (!res.ok) throw new Error('Falha ao buscar dados')
       return res.json()
     })
-    .then(data => setLinks(data))
-    .catch(() => navigate('/'))
+    .then((data) => {
+      // --- CORREÇÃO 2: Lendo do lugar certo (data.user.links) ---
+      // O backend agora manda { user: { links: [] } }
+      if (data.user && data.user.links) {
+        setLinks(data.user.links)
+      } else {
+        setLinks([])
+      }
+    })
+    .catch(() => {
+      // Se der erro grave, desloga o usuário
+      localStorage.clear()
+      navigate('/')
+    })
   }, [navigate])
 
   async function handleAddLink() {
@@ -42,7 +56,8 @@ export default function Dashboard() {
     
     if (!title || !url) return alert("Preencha tudo!")
 
-    const response = await fetch('http://localhost:3333/links', {
+    // --- CORREÇÃO 3: Trocando localhost por API_URL ---
+    const response = await fetch(`${API_URL}/links`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -63,7 +78,9 @@ export default function Dashboard() {
 
   async function handleDeleteLink(id: string) {
     const token = localStorage.getItem('mylinks-token')
-    const response = await fetch(`http://localhost:3333/links/${id}`, {
+    
+    // --- CORREÇÃO 4: Trocando localhost por API_URL ---
+    const response = await fetch(`${API_URL}/links/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     })
@@ -123,8 +140,9 @@ export default function Dashboard() {
               ⚙️ Perfil
             </button>
 
+            {/* --- CORREÇÃO 5: Link relativo para funcionar na Vercel --- */}
             <a 
-              href={`http://localhost:5173/${userSlug}`} 
+              href={`/${userSlug}`} 
               target="_blank" 
               style={{ color: '#a1a1aa', textDecoration: 'none', fontSize: '14px', fontWeight: '500' }}
             >
@@ -191,7 +209,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* --- LISTA DE LINKS COM CONTADOR 📊 --- */}
+        {/* --- LISTA DE LINKS --- */}
         <h3 style={{ fontSize: '18px', color: '#ccc', marginBottom: '20px', fontWeight: '500' }}>Seus Links Ativos</h3>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '40px' }}>
@@ -222,11 +240,10 @@ export default function Dashboard() {
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                 
-                {/* AQUI ESTÁ O CONTADOR! 👇 */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#a1a1aa' }}>
                   <span>📊</span>
                   <span style={{ fontWeight: 'bold', color: '#fff', fontSize: '16px' }}>
-                    {link.clicks || 0} {/* Mostra 0 se não tiver cliques ainda */}
+                    {link.clicks || 0}
                   </span>
                   <span style={{ fontSize: '12px' }}>cliques</span>
                 </div>
