@@ -167,7 +167,7 @@ export default function Dashboard() {
           </div>
         </header>
 
-        {/* --- CARD DE CRIAR LINK --- */}
+        {/* --- CARD DE CRIAR LINK (CORRIGIDO PARA MOBILE) 📱✅ --- */}
         <div style={{ 
           backgroundColor: '#121214', 
           padding: '32px', 
@@ -181,28 +181,33 @@ export default function Dashboard() {
           </h2>
           
           <div style={{ display: 'flex', gap: '15px', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', gap: '15px' }}>
-              <div style={{ flex: 1 }}>
+            
+            {/* AQUI ESTÁ A MUDANÇA: flexWrap: 'wrap' e flex: '1 1 200px' */}
+            <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 200px' }}>
                 <input 
                   className="input-modern" 
                   placeholder="Título (ex: Meu Instagram)" 
                   value={title} 
-                  onChange={e => setTitle(e.target.value)} 
+                  onChange={e => setTitle(e.target.value)}
+                  style={{ fontSize: '16px' }} // <--- Fonte 16px previne zoom no iPhone
                 />
               </div>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: '1 1 200px' }}>
                 <input 
                   className="input-modern"
                   placeholder="URL (https://...)" 
                   value={url} 
                   onChange={e => setUrl(e.target.value)} 
+                  style={{ fontSize: '16px' }} // <--- Fonte 16px previne zoom no iPhone
                 />
               </div>
             </div>
+
             <button 
               className="btn-primary" 
               onClick={handleAddLink} 
-              style={{ marginTop: '5px' }}
+              style={{ marginTop: '5px', width: '100%', fontSize: '16px' }}
             >
               + Adicionar Link
             </button>

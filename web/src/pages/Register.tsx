@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import '../App.css'
 import logoImg from '../assets/logo.png'
@@ -11,27 +11,55 @@ export default function Register() {
   const [slug, setSlug] = useState('')
   const navigate = useNavigate()
 
-  async function handleRegister() {
+async function handleRegister(e: FormEvent) {
+    e.preventDefault()
+
     if (!name || !email || !password || !slug) {
-      return alert("Por favor, preencha todos os campos!")
+      alert("Preencha todos os campos!")
+      return
     }
 
     try {
       const response = await fetch(`${API_URL}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, slug })
+        body: JSON.stringify({ 
+          name, 
+          email, 
+          password,
+          slug 
+        })
       })
 
-      if (response.ok) {
-        alert("Conta criada com sucesso!")
-        navigate('/')
-      } else {
-        const data = await response.json()
-        alert("Erro: " + data.message)
+      const data = await response.json()
+
+      if (!response.ok) {
+        // --- TRADUTOR DE ERROS 🗣️ ---
+        let errorMessage = data.message || "Erro desconhecido"
+
+        // Erro de Slug inválido (Regex)
+        if (errorMessage.includes('pattern') || errorMessage.includes('slug')) {
+          errorMessage = "O link deve conter apenas letras minúsculas, números e traços (sem espaços ou acentos)."
+        }
+        // Erro de Duplicidade (Email ou Slug já existem)
+        else if (errorMessage.includes('Unique constraint') || errorMessage.includes('exist')) {
+          errorMessage = "Este E-mail ou Link já está em uso. Tente outro."
+        }
+        // Senha curta
+        else if (errorMessage.includes('password')) {
+          errorMessage = "A senha precisa ter no mínimo 6 caracteres."
+        }
+
+        throw new Error(errorMessage)
       }
-    } catch (error) {
-      alert("Erro ao conectar com o servidor.")
+
+      // Sucesso
+      alert("Conta criada com sucesso! Faça login.")
+      navigate('/')
+
+    } catch (err: any) {
+      // Agora o alerta mostra a mensagem traduzida bonitinha
+      alert(err.message)
     }
   }
 
