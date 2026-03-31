@@ -38,6 +38,19 @@ O **MyLinks** é uma plataforma completa de agregação de links (estilo Linktre
 
 ---
 
+## 🧪 Qualidade e Testes Automatizados
+
+Este projeto foi construído com foco em resiliência e qualidade de código. O backend conta com uma suíte de testes de integração e testes de unidade garantindo o funcionamento do CRUD e das regras de negócio.
+
+- **Ferramentas:** Vitest e Supertest.
+- **Cobertura atual:** ~80% de test coverage (Statements).
+- **Cenários validados:**
+  - Criação de usuários e proteção de duplicidade no banco (Prisma).
+  - Sistema de Autenticação (JWT) e validação de rotas protegidas por Middleware.
+  - CRUD completo de links do Dashboard.
+  - Rotas públicas de perfil e contabilização de cliques.
+  - Validação de schemas e payloads com Zod.
+
 ## 📂 Como Rodar Localmente
 
 Siga o passo a passo abaixo para executar o projeto na sua máquina.

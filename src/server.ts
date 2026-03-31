@@ -276,6 +276,12 @@ app.post('/links/:id/click', async (req, res) => {
 
 console.log("PASSO 3: Tentando abrir a porta " + port + "...")
 
-app.listen(port, () => {
-  console.log(`✅ SUCESSO! Servidor rodando em http://localhost:${port}`);
-});
+// Só liga o servidor na porta se NÃO estiver rodando testes do Vitest
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(port, () => {
+    console.log(`✅ SUCESSO! Servidor rodando em http://localhost:${port}`);
+  });
+}
+
+// Exporta o app para o Vitest e o Supertest conseguirem acessar as rotas
+export { app };
